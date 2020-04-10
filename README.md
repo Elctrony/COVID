@@ -1,6 +1,6 @@
 # COVID-19 Tracker
 
-An App that track The COVID-19 cases including death and recoverd
+An App that track The COVID-19 cases
 ## Getting Started
 
 This project is a starting point for a Flutter application.
