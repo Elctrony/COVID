@@ -4,6 +4,9 @@ import 'package:covid/covid.dart';
 import 'package:covid/screen/details.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+enum Settings { Options, ContactUs }
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -18,6 +21,7 @@ class HomeScreenState extends State<HomeScreen> {
   var currentIcon = Icons.search;
   Widget currentBar = Text('Covid-19 Tracker');
   TextEditingController countryName = TextEditingController();
+  bool white = false;
   @override
   void initState() {
     // TODO: implement initState
@@ -70,7 +74,39 @@ class HomeScreenState extends State<HomeScreen> {
                     });
                   }
                 });
-              })
+              }),
+          PopupMenuButton<Settings>(
+              onSelected: (setting) {
+                if (setting == Settings.ContactUs) {
+                  showAboutDialog(
+                      context: context,
+                      applicationName: 'COVID tracker',
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('Name:'),
+                            Text(
+                              'Mohamed Abu El-Naga',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text('Phone/WhatsApp:'),
+                            Text('+201006540175',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text('Email:'),
+                            Text('mohamed.abuelnga03@gmail.com',
+                                style: TextStyle(fontWeight: FontWeight.bold))
+                          ],
+                        )
+                      ]);
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<Settings>>[
+                    const PopupMenuItem<Settings>(
+                      value: Settings.ContactUs,
+                      child: Text('Contact Us'),
+                    ),
+                  ])
         ],
       ),
       body: FutureBuilder(
@@ -118,49 +154,86 @@ class HomeScreenState extends State<HomeScreen> {
     print((jsonRespone['response'] as List).length);
     for (var covidJson in (jsonRespone['response'] as List)) {
       Covid covid = Covid.fromJson(covidJson);
-      if(covid.name!='All')
       covidCases.add(covid);
     }
-
     reOrder();
     refactor();
     return respon.body;
   }
 
+  List<String> crash = [
+    'Dominican-Republic',
+    'Bosnia-and-Herzegovina',
+    'Oceania',
+    'North-Macedonia',
+    'Diamond-Princess-',
+    'Diamond-Princess',
+    'Ivory-Coast',
+    'Costa-Rica',
+    'Burkina-Faso',
+    'Channel-Islands',
+    'R&eacute;union',
+    'San-Marino',
+    'Isle-of-Man',
+    'DRC',
+    'Sri-Lanka',
+    'Faeroe-Islands',
+    'El-Salvador',
+    'Trinidad-and-Tobago',
+    'Congo',
+    'French-Guiana',
+    'Bermuda',
+    'Cabo-Verde',
+    'French-Polynesia',
+    'Cayman-Islands',
+    'Sint-Maarten',
+    'Equatorial-Guinea',
+    'Macao',
+    'Bahamas',
+    'Guinea-Bissau',
+    'Puerto-Rico',
+    'Saint-Martin',
+    'Antigua-and-Barbuda',
+    'New-Caledonia',
+    'US-Virgin-Islands',
+    'Saint-Lucia',
+    'Saint-Kitts-and-Nevis',
+    'St-Vincent-Grenadines',
+    'Sao-Tome-and-Principe',
+    'Caribbean-Netherlands',
+    'PapuA-New-Guinea',
+    'Saint-Pierre-Miquelon',
+  ];
   void refactor() {
+    covidCases.removeWhere((item) => crash.contains(item.name));
     for (var covid in covidCases) {
-      if (covid.name == 'USA') {
-        covid.addImage(
-            'https://www.gstatic.com/onebox/sports/logos/flags/united_states_icon_square.png');
-      } else if (covid.name == 'UK') {
-        covid.addImage(
-            'https://www.gstatic.com/onebox/sports/logos/flags/united_kingdom_icon_square.png');
-      } else if (covid.name == 'Saudi-Arabia') {
-        covid.addImage(
-            'https://www.gstatic.com/onebox/sports/logos/flags/saudi_arabia_icon_square.png');
-      } else if (covid.name == 'UAE') {
-        covid.addImage(
-            'https://www.gstatic.com/onebox/sports/logos/flags/united_arab_emirates_icon_square.png');
-      } else if (covid.name == 'S-Korea') {
-        covid.addImage(
-            'https://www.gstatic.com/onebox/sports/logos/flags/south_korea_icon_square.png');
-      } else if (covid.name == 'South_Africa') {
-        covid.addImage(
-            'https://www.gstatic.com/onebox/sports/logos/flags/south_africa_icon_square.png');
-      } else if (covid.name == 'Czechia') {
-        covid.addImage(
-            'https://www.gstatic.com/onebox/sports/logos/flags/czech_republic_icon_square.png');
-      } else
-        covid.addImage(
-            'https://www.gstatic.com/onebox/sports/logos/flags/${covid.name.toLowerCase()}_icon_square.png');
+      int newCases = int.parse(covid.newCase);
+      if (newCases > 1000) {
+        //covid.setNewCases('${(newCases/1000 as int)}K');
+        int play = newCases ~/ 1000;
+        print(play);
+        covid.setNewCases('${play}K');
+      }
+      int newDeath = int.parse(covid.newDeath);
+      if (newDeath > 1000) {
+        //covid.setNewCases('${(newCases/1000 as int)}K');
+        int play = newDeath ~/ 1000;
+        covid.setNewDeath('${play}K');
+      }
     }
   }
 
   Widget getItem({Covid covid}) {
+    if (Image.network(covid.imageUrl) == null) {
+      print('null');
+      return Container();
+    }
     return InkWell(
       child: Card(
         elevation: 12,
-        margin: EdgeInsets.symmetric(vertical: 12),
+        margin: EdgeInsets.symmetric(
+          vertical: 12,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         child: Container(
           child: Column(
@@ -169,7 +242,9 @@ class HomeScreenState extends State<HomeScreen> {
                 children: <Widget>[
                   SizedBox(width: 20),
                   Row(children: [
-                    Image.network(covid.imageUrl),
+                    Image.network(
+                      covid.imageUrl,
+                    ),
                     SizedBox(width: 8),
                     Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +253,7 @@ class HomeScreenState extends State<HomeScreen> {
                             '${covid.name}',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 25,
+                              fontSize: 23,
                             ),
                           ),
                           Row(children: [
@@ -205,23 +280,31 @@ class HomeScreenState extends State<HomeScreen> {
                         children: <Widget>[
                           Text('${covid.totalCases}',
                               style: TextStyle(
-                                  fontSize: 23, fontWeight: FontWeight.bold)),
+                                  fontSize: 21, fontWeight: FontWeight.bold)),
                           SizedBox(height: 3),
                           FittedBox(
                             child: Text(
                               'Total',
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 18,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(width: 10),
-                      Text('${covid.newCase}', style: TextStyle(fontSize: 16)),
+                      (covid.newCase.isNotEmpty &&
+                              covid.newCase != null &&
+                              covid.newCase != 'null')
+                          ? Chip(
+                              elevation: 5,
+                              label: Text('${covid.newCase}',
+                                  style: TextStyle(fontSize: 12)),
+                            )
+                          : SizedBox(
+                              width: 8,
+                            ),
                     ],
                   ),
-                  SizedBox(width: 40),
                 ],
               ),
               Container(
@@ -239,24 +322,19 @@ class HomeScreenState extends State<HomeScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Icon(
-                                Icons.people,
-                                color: Colors.white,
-                              ),
-                              SizedBox(width: 10),
                               Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: <Widget>[
                                   SizedBox(height: 3),
                                   Text('${covid.recovered}',
                                       style: TextStyle(
-                                          fontSize: 22,
+                                          fontSize: 20,
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold)),
                                   SizedBox(height: 3),
                                   Text('Recovered',
                                       style: TextStyle(
-                                          fontSize: 20, color: Colors.white))
+                                          fontSize: 18, color: Colors.white))
                                 ],
                               ),
                             ],
@@ -274,29 +352,37 @@ class HomeScreenState extends State<HomeScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            Icon(Icons.people, color: Colors.white),
-                            SizedBox(width: 10),
                             Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: <Widget>[
                                 SizedBox(height: 3),
                                 Text('${covid.totalDeath}',
                                     style: TextStyle(
-                                        fontSize: 22,
+                                        fontSize: 20,
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold)),
                                 SizedBox(height: 3),
                                 Text(
                                   'Death',
                                   style: TextStyle(
-                                      fontSize: 20, color: Colors.white),
+                                      fontSize: 18, color: Colors.white),
                                 ),
                               ],
                             ),
                             SizedBox(width: 10),
-                            Text('${covid.newDeath}',
-                                style: TextStyle(
-                                    fontSize: 18, color: Colors.white)),
+                            (covid.newDeath.isNotEmpty &&
+                                    covid.newDeath != null &&
+                                    covid.newDeath != 'null')
+                                ? Chip(
+                                    label: Text(
+                                      '${covid.newDeath}',
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.white),
+                                    ),
+                                    backgroundColor: Colors.red,
+                                    elevation: 5,
+                                  )
+                                : Container(),
                           ],
                         ),
                       ),

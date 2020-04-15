@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import './screen/home_screen.dart';
+
 void main() => runApp(RootApp());
 
 class RootApp extends StatelessWidget {
@@ -8,10 +10,7 @@ class RootApp extends StatelessWidget {
     // TODO: implement build
     return MaterialApp(
       theme: ThemeData.dark(),
-      title: 'Covid-19 tracker',
       home: HomeScreen(),
     );
   }
 }
-
-
